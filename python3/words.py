@@ -22,16 +22,26 @@ def int_find_neighbors(word, goal, possibilities, cost_so_far, my_dictionary):
 
     :return: a list of possibilities
     """
+    new_keys = []
     for index, letter in enumerate(word):
         if letter != goal[index]:
             for alternate in string.ascii_lowercase:
                 possible = word[:index] + alternate + word[index+1:]
+
                 if possible != word and possible in my_dictionary:
-                    new_cost = cost_so_far[word] + cost_from_word_to_goal(possible, goal)
+                    new_cost = cost_so_far[word] + cost_from_word_to_goal(word, possible)
                     if possible not in cost_so_far or new_cost < cost_so_far[possible]:
+                        new_keys.append(possible)
                         possibilities[possible] = word
                         cost_so_far[possible] = new_cost
-                        possibilities = int_find_neighbors(possible, goal, possibilities, cost_so_far, my_dictionary)
+
+    if len(new_keys) > 0:
+        min_cost = min([cost_from_word_to_goal(word, goal) for word in new_keys])
+        my_keys = [word for word in new_keys if cost_from_word_to_goal(word, goal) == min_cost]
+        # my_keys = new_keys
+
+        for key in my_keys:
+            possibilities = int_find_neighbors(key, goal, possibilities, cost_so_far, my_dictionary)
 
     return possibilities
 
@@ -48,12 +58,17 @@ def run_program(start, goal):
 
     solution = []
     next = goal
-    while next != start:
-        solution.append(next)
-        next = possible_words[next]
+    try:
+        while next != start:
+            solution.append(next)
+            next = possible_words[next]
 
-    solution.append(start)
-    solution.reverse()
+        solution.append(start)
+        solution.reverse()
+    except KeyError:
+        # print('found dead end' % next)
+        solution = []
+
     return solution
 
 if __name__ == '__main__':
@@ -62,6 +77,9 @@ if __name__ == '__main__':
 
     if len(start) == len(goal):
         solution = run_program(start, goal)
-        print('solution: %s' % solution)
+        if len(solution) > 0:
+            print('solution: %s' % solution)
+        else:
+            print('no solution from %s to %s' % (start, goal))
     else:
         print('start and goal must have the same number of characters')
